@@ -1,57 +1,30 @@
 # backend/procedural_generator.py
-"""
-Procedural Room Generator for AURA One MVP.
-Takes a list of room names and creates simple spatial layout data.
-"""
 
-ROOM_DATABASE = {
-    "living_room": {"width": 4, "height": 5},
-    "bedroom": {"width": 3, "height": 4},
-    "kitchen": {"width": 3, "height": 3},
-    "bathroom": {"width": 2, "height": 2},
-    "dining_room": {"width": 3, "height": 3},
-    "study": {"width": 3, "height": 3},
-    "toilet": {"width": 1.5, "height": 2},
-    "laundry": {"width": 2, "height": 2},
-    "storage": {"width": 2, "height": 2},
-    "corridor": {"width": 1, "height": 4}
-}
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+from helpers import calculate_grid_dimensions, assign_colors  # simplified imports after sys.path fix
 
-def procedural_floorplan(room_list):
-    """
-    Accepts a list of room types (e.g., [\"living_room\", \"bedroom\", \"kitchen\"])
-    Returns a layout plan with x/y coordinates and sizes.
-    """
-    layout = []
-    x_cursor = 0
-    y_cursor = 0
-    row_height = 0
-    max_width = 15
+def generate_floor_plan(rooms):
+    fig, ax = plt.subplots(figsize=(8, 6))
+    n = len(rooms)
+    rows, cols = calculate_grid_dimensions(n)
+    colors = assign_colors(n)
 
-    for room in room_list:
-        if room not in ROOM_DATABASE:
-            continue
+    width, height = 10, 8
+    room_w = width / cols
+    room_h = height / rows
 
-        room_data = ROOM_DATABASE[room]
-        width = room_data["width"]
-        height = room_data["height"]
+    for idx, room in enumerate(rooms):
+        row = idx // cols
+        col = idx % cols
+        x = col * room_w
+        y = height - (row + 1) * room_h
+        rect = patches.Rectangle((x, y), room_w, room_h, linewidth=1, edgecolor='black', facecolor=colors[idx % len(colors)])
+        ax.add_patch(rect)
+        ax.text(x + room_w / 2, y + room_h / 2, room, fontsize=9, ha='center', va='center')
 
-        # Move to next row if current row is full
-        if x_cursor + width > max_width:
-            x_cursor = 0
-            y_cursor += row_height + 1
-            row_height = 0
-
-        layout.append({
-            "name": room,
-            "x": x_cursor,
-            "y": y_cursor,
-            "width": width,
-            "height": height,
-            "area": width * height
-        })
-
-        x_cursor += width + 1  # Add gap between rooms
-        row_height = max(row_height, height)
-
-    return layout
+    ax.set_xlim(0, width)
+    ax.set_ylim(0, height)
+    ax.set_aspect('equal')
+    ax.axis('off')
+    return fig
